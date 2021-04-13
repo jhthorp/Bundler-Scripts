@@ -65,7 +65,7 @@ Utility-Scripts package.
 _Usage_
 
 ```
-[bash] ./create_bundle.sh <srcDir> <completeBundleName>
+[bash] ./create_bundle.sh [auto_skip] <srcDir> <completeBundleName>
 ```
 
 _Options_
@@ -78,6 +78,7 @@ _Parameters_
 
 |         Parameter         |                   Description                    |
 |           :---:           |                      :---:                       |
+|      Automated Skip       |            Continue without prompting            |
 |     Source Directory      |                 Source directory                 |
 |        Bundle Name        |            Name for the output bundle            |
 
@@ -85,6 +86,7 @@ _Examples_
 
 * **./create_bundle.sh** "../Utility-Scripts" "Utilities"
 * **./create_bundle.sh** "../TrueNAS-Scripts" "TrueNAS"
+* **./create_bundle.sh** "auto_skip" "../TrueNAS-Scripts" "TrueNAS"
 
 ### create_bundle_dir.sh
 
@@ -94,7 +96,8 @@ for bundling as an archive.
 _Usage_
 
 ```
-[bash] ./create_bundle_dir.sh <srcDir> <bundlesDir> <destDirName> <filenameStructure> [keepStructure]
+[bash] ./create_bundle_dir.sh [auto_skip] <srcDir> <bundlesDir> <destDirName> 
+<filenameStructure> [keepStructure]
 ```
 
 _Options_
@@ -107,6 +110,7 @@ _Parameters_
 
 |         Parameter         |                   Description                    |
 |           :---:           |                      :---:                       |
+|      Automated Skip       |            Continue without prompting            |
 |     Source Directory      |                 Source directory                 |
 |     Bundles Directory     |                Bundles directory                 |
 |   Destination Directory   |     Name of the destination bundle directory     |
@@ -115,8 +119,12 @@ _Parameters_
 
 _Examples_
 
-* **./create_bundle_dir.sh** "../Utility-Scripts" "../_bundles" "Utility-Scripts" '*.sh' false
-* **./create_bundle_dir.sh** "../TrueNAS-Scripts" "../_bundles" "TrueNAS-Scripts" '*.sh' true
+* **./create_bundle_dir.sh** "../Utility-Scripts" "../_bundles" 
+"Utility-Scripts" '*.sh' false
+* **./create_bundle_dir.sh** "../TrueNAS-Scripts" "../_bundles" 
+"TrueNAS-Scripts" '*.sh' true
+* **./create_bundle_dir.sh** "auto_skip" "../TrueNAS-Scripts" "../_bundles" 
+"TrueNAS-Scripts" '*.sh' true
 
 ## Deployment
 
