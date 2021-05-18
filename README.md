@@ -96,8 +96,8 @@ for bundling as an archive.
 _Usage_
 
 ```
-[bash] ./create_bundle_dir.sh [auto_skip] <srcDir> <bundlesDir> <destDirName> 
-<filenameStructure> [keepStructure]
+[bash] ./create_bundle_dir.sh [auto_skip] <srcPath> <srcDir> <bundlesDir> 
+<destDirName> <filenameStructure> [keepStructure]
 ```
 
 _Options_
@@ -111,20 +111,21 @@ _Parameters_
 |         Parameter         |                   Description                    |
 |           :---:           |                      :---:                       |
 |      Automated Skip       |            Continue without prompting            |
-|     Source Directory      |                 Source directory                 |
-|     Bundles Directory     |                Bundles directory                 |
+|        Source Path        |        Source directory path to work from        |
+|     Source Directory      |   Source directory relative to the source path   |
+|     Bundles Directory     |  Bundles directory relative to the source path   |
 |   Destination Directory   |     Name of the destination bundle directory     |
 |      File Name REGEX      |            REGEX for files to bundle             |
 |   Maintain Directories    |      Switch to keep the directory structure      |
 
 _Examples_
 
-* **./create_bundle_dir.sh** "../Utility-Scripts" "../_bundles" 
-"Utility-Scripts" '*.sh' false
-* **./create_bundle_dir.sh** "../TrueNAS-Scripts" "../_bundles" 
-"TrueNAS-Scripts" '*.sh' true
-* **./create_bundle_dir.sh** "auto_skip" "../TrueNAS-Scripts" "../_bundles" 
-"TrueNAS-Scripts" '*.sh' true
+* **./create_bundle_dir.sh** "./path/to/dir" "./Source" "./Bundles" 
+"Bundle-Name" '*.sh' false
+* **./create_bundle_dir.sh** "./path/to/dir" "./Source" "./Bundles" 
+"Bundle-Name" '*.sh' true
+* **./create_bundle_dir.sh** "auto_skip" "./path/to/dir" "./Source" 
+"./Bundles" "Bundle-Name" '*.sh' true
 
 ## Deployment
 

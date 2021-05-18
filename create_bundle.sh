@@ -46,20 +46,67 @@ stack_vars[${#stack_vars[@]}]=1 ||
 stack_vars[${#stack_vars[@]}]=0
 
 # Determine the exectuable directory (DIR)
-stack_vars[${#stack_vars[@]}]="${BASH_SOURCE%/*}"
-if [[ ! -d "${stack_vars[${#stack_vars[@]}-1]}" ]]; 
-then 
-  stack_vars[${#stack_vars[@]}-1]="${PWD}"; 
+DIR_SRC="${BASH_SOURCE%/*}"
+if [[ ! -d "${DIR_SRC}" ]];
+then
+  DIR_SRC="${PWD}";
 fi
+
+# Convert any relative paths into absolute paths
+DIR_SRC=$(cd ${DIR_SRC}; printf %s. "$PWD")
+DIR_SRC=${DIR_SRC%?}
+
+# Copy over the DIR source and remove the temporary variable
+stack_vars[${#stack_vars[@]}]=${DIR_SRC}
+unset DIR_SRC
+
+# Add Functional Aliases
+SOURCING_INVOCATION () { echo "${stack_vars[${#stack_vars[@]}-2]}"; }
+DIR () { echo "${stack_vars[${#stack_vars[@]}-1]}"; }
 
 ################################################################################
 #                               SCRIPT INCLUDES                                #
 ################################################################################
-. "${stack_vars[${#stack_vars[@]}-1]}/create_bundle_dir.sh"
+. "$(DIR)/create_bundle_dir.sh"
 
 ################################################################################
 #                                  FUNCTIONS                                   #
 ################################################################################
+#===============================================================================
+# This function will grab this script's working directory as an absolute path.
+#
+# GLOBALS / SIDE EFFECTS:
+#   N_A - N/A
+#
+# OPTIONS:
+#   [-na] N/A
+#
+# ARGUMENTS:
+#   [1 - N/A] N/A
+#
+# OUTPUTS:
+#   N/A - N/A
+#
+# RETURN:
+#   0 - SUCCESS
+#   Non-Zero - ERROR
+#===============================================================================
+SCRIPT_DIR () {
+  # Determine the exectuable directory (DIR)
+  declare DIR_SRC="${BASH_SOURCE%/*}"
+  if [[ ! -d "${DIR_SRC}" ]];
+  then
+    DIR_SRC="${PWD}";
+  fi
+
+  # Convert any relative paths into absolute paths
+  DIR_SRC=$(cd ${DIR_SRC}; printf %s. "$PWD")
+  DIR_SRC=${DIR_SRC%?}
+
+  # Copy over the DIR source and remove the temporary variable
+  echo "${DIR_SRC}"
+}
+
 #===============================================================================
 # This function will create an archived bundle from a given directory including 
 # all utility scripts.
@@ -86,8 +133,10 @@ create_bundle ()
   declare -r srcDir=${1}
   declare -r completeBundleName=${2-"Bundle"}
 
-  declare -r bundlesDir="../_bundles"
-  declare -r utilsDir="../Utility-Scripts"
+  declare -r CUR_DIR=$(SCRIPT_DIR)
+  declare -r srcPath="${CUR_DIR}/.."
+  declare -r bundlesDir="./_bundles"
+  declare -r utilsDir="./Utility-Scripts"
 
   # Clenup the previous bundle
   rm -rf "${bundlesDir}/${utilsDir##*/}" 2> /dev/null
@@ -95,6 +144,7 @@ create_bundle ()
 
   # Create the Utilities Bundle
   $(create_bundle_dir \
+    "${srcPath}" \
     "${utilsDir}" \
     "${bundlesDir}" \
     "${utilsDir##*/}" \
@@ -102,6 +152,7 @@ create_bundle ()
     true \
   )
   $(create_bundle_dir \
+    "${srcPath}" \
     "${utilsDir}" \
     "${bundlesDir}" \
     "${utilsDir##*/}" \
@@ -121,6 +172,7 @@ create_bundle ()
 
   # Create the Requested Bundle
   $(create_bundle_dir \
+    "${srcPath}" \
     "${srcDir}" \
     "${bundlesDir}" \
     "${srcDir##*/}" \
@@ -128,6 +180,7 @@ create_bundle ()
     true \
   )
   $(create_bundle_dir \
+    "${srcPath}" \
     "${srcDir}" \
     "${bundlesDir}" \
     "${srcDir##*/}" \
@@ -147,6 +200,7 @@ create_bundle ()
 
   # # Create the Complete Bundle
   $(create_bundle_dir \
+    "${srcPath}" \
     "${bundlesDir}/${utilsDir##*/}" \
     "${bundlesDir}" \
     "${completeBundleName}" \
@@ -154,6 +208,7 @@ create_bundle ()
     true \
   )
   $(create_bundle_dir \
+    "${srcPath}" \
     "${bundlesDir}/${srcDir##*/}" \
     "${bundlesDir}" \
     "${completeBundleName}" \
@@ -199,7 +254,7 @@ create_bundle ()
 #   0 - SUCCESS
 #   Non-Zero - ERROR
 #===============================================================================
-if [ ${stack_vars[${#stack_vars[@]}-2]} = 0 ]; # SOURCING_INVOCATION
+if [ $(SOURCING_INVOCATION) = 0 ];
 then
   # Print a copyright/license header
   cat << EOF

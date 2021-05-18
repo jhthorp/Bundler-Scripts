@@ -46,16 +46,28 @@ stack_vars[${#stack_vars[@]}]=1 ||
 stack_vars[${#stack_vars[@]}]=0
 
 # Determine the exectuable directory (DIR)
-stack_vars[${#stack_vars[@]}]="${BASH_SOURCE%/*}"
-if [[ ! -d "${stack_vars[${#stack_vars[@]}-1]}" ]]; 
-then 
-  stack_vars[${#stack_vars[@]}-1]="${PWD}"; 
+DIR_SRC="${BASH_SOURCE%/*}"
+if [[ ! -d "${DIR_SRC}" ]];
+then
+  DIR_SRC="${PWD}";
 fi
+
+# Convert any relative paths into absolute paths
+DIR_SRC=$(cd ${DIR_SRC}; printf %s. "$PWD")
+DIR_SRC=${DIR_SRC%?}
+
+# Copy over the DIR source and remove the temporary variable
+stack_vars[${#stack_vars[@]}]=${DIR_SRC}
+unset DIR_SRC
+
+# Add Functional Aliases
+SOURCING_INVOCATION () { echo "${stack_vars[${#stack_vars[@]}-2]}"; }
+DIR () { echo "${stack_vars[${#stack_vars[@]}-1]}"; }
 
 ################################################################################
 #                               SCRIPT INCLUDES                                #
 ################################################################################
-. "${stack_vars[${#stack_vars[@]}-1]}/../Utility-Scripts/cp/copy_all_files_to_dir.sh"
+. "$(DIR)/../Utility-Scripts/cp/copy_all_files_to_dir.sh"
 
 ################################################################################
 #                                  FUNCTIONS                                   #
@@ -71,11 +83,12 @@ fi
 #   [-na] N/A
 #
 # ARGUMENTS:
-#   [1 - srcDir] The source directory
-#   [2 - bundlesDir] The bundles directory
-#   [3 - destDirName] The name of the destination bundle directory
-#   [4 - filenameStructure] The REGEX for files to bundle
-#   [5 - keepStructure] The switch to keep the directory structure
+#   [1 - srcPath] The source directory path
+#   [2 - srcDir] The source directory relative to the source path
+#   [3 - bundlesDir] The bundles directory relative to the source path
+#   [4 - destDirName] The name of the destination bundle directory
+#   [5 - filenameStructure] The REGEX for files to bundle
+#   [6 - keepStructure] The switch to keep the directory structure
 #
 # OUTPUTS:
 #   N/A - N/A
@@ -86,13 +99,15 @@ fi
 #===============================================================================
 create_bundle_dir ()
 {
-  declare -r srcDir=${1}
-  declare -r bundlesDir=${2}
-  declare -r destDirName=${3}
-  declare -r filenameStructure=${4} # TODO: Accept a collection here
-  declare -r keepStructure=${5-true}
+  declare -r srcPath=${1}  
+  declare -r srcDir=${2}
+  declare -r bundlesDir=${3}
+  declare -r destDirName=${4}
+  declare -r filenameStructure=${5} # TODO: Accept a collection here
+  declare -r keepStructure=${6-true}
 
   $(copy_all_files_to_dir \
+    "${srcPath}" \
     "${srcDir}" \
     "${bundlesDir}/${destDirName}" \
     "${filenameStructure}" \
@@ -125,7 +140,7 @@ create_bundle_dir ()
 #   0 - SUCCESS
 #   Non-Zero - ERROR
 #===============================================================================
-if [ ${stack_vars[${#stack_vars[@]}-2]} = 0 ]; # SOURCING_INVOCATION
+if [ $(SOURCING_INVOCATION) = 0 ];
 then
   # Print a copyright/license header
   cat << EOF
