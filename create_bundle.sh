@@ -73,6 +73,36 @@ DIR () { echo "${stack_vars[${#stack_vars[@]}-1]}"; }
 #                                  FUNCTIONS                                   #
 ################################################################################
 #===============================================================================
+# This function will convert a relative path into an absolute path.
+#
+# GLOBALS / SIDE EFFECTS:
+#   N_A - N/A
+#
+# OPTIONS:
+#   [-na] N/A
+#
+# ARGUMENTS:
+#   [1 - relPath] A relative path
+#
+# OUTPUTS:
+#   absPath - The absolute path
+#
+# RETURN:
+#   0 - SUCCESS
+#   Non-Zero - ERROR
+#===============================================================================
+REL_TO_ABS_PATH () {
+  local relPath="${1}"
+
+  # Convert any relative paths into absolute paths
+  local TMP_ABS_PATH=$(cd ${relPath}; printf %s. "$PWD")
+  TMP_ABS_PATH=${TMP_ABS_PATH%?}
+
+  # Return the absolute path
+  echo "${TMP_ABS_PATH}"
+}
+
+#===============================================================================
 # This function will grab this script's working directory as an absolute path.
 #
 # GLOBALS / SIDE EFFECTS:
@@ -85,7 +115,7 @@ DIR () { echo "${stack_vars[${#stack_vars[@]}-1]}"; }
 #   [1 - N/A] N/A
 #
 # OUTPUTS:
-#   N/A - N/A
+#   scriptDir - The absolute script directory path
 #
 # RETURN:
 #   0 - SUCCESS
@@ -93,18 +123,13 @@ DIR () { echo "${stack_vars[${#stack_vars[@]}-1]}"; }
 #===============================================================================
 SCRIPT_DIR () {
   # Determine the exectuable directory (DIR)
-  declare DIR_SRC="${BASH_SOURCE%/*}"
-  if [[ ! -d "${DIR_SRC}" ]];
+  local TMP_DIR_SRC="${1}"
+  if [[ ! -d "${TMP_DIR_SRC}" ]];
   then
-    DIR_SRC="${PWD}";
+    TMP_DIR_SRC="${PWD}";
   fi
 
-  # Convert any relative paths into absolute paths
-  DIR_SRC=$(cd ${DIR_SRC}; printf %s. "$PWD")
-  DIR_SRC=${DIR_SRC%?}
-
-  # Copy over the DIR source and remove the temporary variable
-  echo "${DIR_SRC}"
+  echo $(REL_TO_ABS_PATH "${TMP_DIR_SRC}")
 }
 
 #===============================================================================
@@ -130,103 +155,107 @@ SCRIPT_DIR () {
 #===============================================================================
 create_bundle ()
 {
-  declare -r srcDir=${1}
-  declare -r completeBundleName=${2-"Bundle"}
+  local srcDir="$(REL_TO_ABS_PATH ${1})"
+  local completeBundleName=${2-"Bundle"}
 
-  declare -r CUR_DIR=$(SCRIPT_DIR)
-  declare -r srcPath="${CUR_DIR}/.."
-  declare -r bundlesDir="./_bundles"
-  declare -r utilsDir="./Utility-Scripts"
+  local SCRIPT_SRC="${BASH_SOURCE%/*}"
+  local CUR_DIR=$(SCRIPT_DIR ${SCRIPT_SRC})
+  local srcPath=$(REL_TO_ABS_PATH "${CUR_DIR}/..")
+  local bundlesDir="_bundles"
+  local utilsDir="Utility-Scripts"
+  local bundlesPath="${srcPath}/${bundlesDir}"
+  local utilsPath="${srcPath}/${utilsDir}"
 
-  # Clenup the previous bundle
-  rm -rf "${bundlesDir}/${utilsDir##*/}" 2> /dev/null
-  rm -f "${bundlesDir}/${utilsDir##*/}.zip" 2> /dev/null
+  # Cleanup the previous bundle
+  rm -rf "${bundlesPath}/${utilsDir##*/}" 2> /dev/null
+  rm -f "${bundlesPath}/${utilsDir##*/}.zip" 2> /dev/null
 
   # Create the Utilities Bundle
   $(create_bundle_dir \
-    "${srcPath}" \
-    "${utilsDir}" \
-    "${bundlesDir}" \
+    "$(REL_TO_ABS_PATH ${srcPath})" \
+    "./${utilsDir}" \
+    "./${bundlesDir}" \
     "${utilsDir##*/}" \
     'LICENSE*' \
     true \
   )
   $(create_bundle_dir \
-    "${srcPath}" \
-    "${utilsDir}" \
-    "${bundlesDir}" \
+    "$(REL_TO_ABS_PATH ${srcPath})" \
+    "./${utilsDir}" \
+    "./${bundlesDir}" \
     "${utilsDir##*/}" \
     '*.sh' \
     true \
   )
 
   # Zip up the bundle and move it up a level
-  $(cd "${bundlesDir}/${utilsDir##*/}" && 
+  $(cd "${bundlesPath}/${utilsDir##*/}" && 
     zip -rq "${utilsDir##*/}" . && 
     mv "${utilsDir##*/}.zip" ../ \
   )
 
-  # Clenup the previous bundle
-  rm -rf "${bundlesDir}/${srcDir##*/}" 2> /dev/null
-  rm -f "${bundlesDir}/${srcDir##*/}.zip" 2> /dev/null
+  # Cleanup the previous bundle
+  rm -rf "${bundlesPath}/${srcDir##*/}" 2> /dev/null
+  rm -f "${bundlesPath}/${srcDir##*/}.zip" 2> /dev/null
 
   # Create the Requested Bundle
   $(create_bundle_dir \
-    "${srcPath}" \
-    "${srcDir}" \
-    "${bundlesDir}" \
+    "$(REL_TO_ABS_PATH ${srcPath})" \
+    "./${srcDir##*/}" \
+    "./${bundlesDir}" \
     "${srcDir##*/}" \
     'LICENSE*' \
     true \
   )
   $(create_bundle_dir \
-    "${srcPath}" \
-    "${srcDir}" \
-    "${bundlesDir}" \
+    "$(REL_TO_ABS_PATH ${srcPath})" \
+    "./${srcDir##*/}" \
+    "./${bundlesDir}" \
     "${srcDir##*/}" \
     '*.sh' \
     true \
   )
 
   # Zip up the bundle and move it up a level
-  $(cd "${bundlesDir}/${srcDir##*/}" && 
+  $(cd "${bundlesPath}/${srcDir##*/}" && 
     zip -rq "${srcDir##*/}" . && 
     mv "${srcDir##*/}.zip" ../ \
   )
 
-  # Clenup the previous bundle
-  rm -rf "${bundlesDir}/${completeBundleName}" 2> /dev/null
-  rm -f "${bundlesDir}/${completeBundleName}.zip" 2> /dev/null
+  # Cleanup the previous bundle
+  rm -rf "${bundlesPath}/${completeBundleName}" 2> /dev/null
+  rm -f "${bundlesPath}/${completeBundleName}.zip" 2> /dev/null
 
-  # # Create the Complete Bundle
+  # Create the Complete Bundle
+  local TMP_BUNDLE_DIR="_bundle"
   $(create_bundle_dir \
-    "${srcPath}" \
-    "${bundlesDir}/${utilsDir##*/}" \
-    "${bundlesDir}" \
+    "$(REL_TO_ABS_PATH ${bundlesPath}/${utilsDir##*/})" \
+    "./${utilsDir##*/}" \
+    "../${TMP_BUNDLE_DIR}" \
     "${completeBundleName}" \
     '*' \
     true \
   )
   $(create_bundle_dir \
-    "${srcPath}" \
-    "${bundlesDir}/${srcDir##*/}" \
-    "${bundlesDir}" \
+    "$(REL_TO_ABS_PATH ${bundlesPath}/${srcDir##*/})" \
+    "./${srcDir##*/}" \
+    "../${TMP_BUNDLE_DIR}" \
     "${completeBundleName}" \
     '*' \
     true \
   )
 
-  # # Zip up the bundle and move it up a level
-  $(cd "${bundlesDir}/${bundlesDir##*/}" && 
+  # Zip up the bundle and move it up a level
+  $(cd "${bundlesPath}/${TMP_BUNDLE_DIR}" && 
     zip -rq "${completeBundleName##*/}" . && 
     mv "${completeBundleName##*/}.zip" ../ \
   )
 
-  # Clenup the intermediate directories
-  rm -rf "${bundlesDir}/${utilsDir##*/}" 2> /dev/null
-  rm -rf "${bundlesDir}/${srcDir##*/}" 2> /dev/null
-  rm -rf "${bundlesDir}/${bundlesDir##*/}" 2> /dev/null
-  rm -rf "${bundlesDir}/${completeBundleName}" 2> /dev/null
+  # Cleanup the intermediate directories
+  rm -rf "${bundlesPath}/${utilsDir##*/}" 2> /dev/null
+  rm -rf "${bundlesPath}/${srcDir##*/}" 2> /dev/null
+  rm -rf "${bundlesPath}/${completeBundleName}" 2> /dev/null
+  rm -rf "${bundlesPath}/${TMP_BUNDLE_DIR}" 2> /dev/null
 }
 
 ################################################################################

@@ -73,6 +73,36 @@ DIR () { echo "${stack_vars[${#stack_vars[@]}-1]}"; }
 #                                  FUNCTIONS                                   #
 ################################################################################
 #===============================================================================
+# This function will convert a relative path into an absolute path.
+#
+# GLOBALS / SIDE EFFECTS:
+#   N_A - N/A
+#
+# OPTIONS:
+#   [-na] N/A
+#
+# ARGUMENTS:
+#   [1 - relPath] A relative path
+#
+# OUTPUTS:
+#   absPath - The absolute path
+#
+# RETURN:
+#   0 - SUCCESS
+#   Non-Zero - ERROR
+#===============================================================================
+REL_TO_ABS_PATH () {
+  local relPath="${1}"
+
+  # Convert any relative paths into absolute paths
+  local TMP_ABS_PATH=$(cd ${relPath}; printf %s. "$PWD")
+  TMP_ABS_PATH=${TMP_ABS_PATH%?}
+
+  # Return the absolute path
+  echo "${TMP_ABS_PATH}"
+}
+
+#===============================================================================
 # This function will copy all nested files from a directory into a single flat 
 # directory for bundling as an archive.
 #
@@ -99,17 +129,17 @@ DIR () { echo "${stack_vars[${#stack_vars[@]}-1]}"; }
 #===============================================================================
 create_bundle_dir ()
 {
-  declare -r srcPath=${1}  
-  declare -r srcDir=${2}
-  declare -r bundlesDir=${3}
-  declare -r destDirName=${4}
-  declare -r filenameStructure=${5} # TODO: Accept a collection here
-  declare -r keepStructure=${6-true}
+  local srcPath=$(REL_TO_ABS_PATH ${1})
+  local srcDir=${2}
+  local bundlesDir=${3}
+  local destDirName=${4}
+  local filenameStructure=${5} # TODO: Accept a collection here
+  local keepStructure=${6-true}
 
   $(copy_all_files_to_dir \
-    "${srcPath}" \
+    "$(REL_TO_ABS_PATH ${srcPath})" \
     "${srcDir}" \
-    "${bundlesDir}/${destDirName}" \
+    "${bundlesDir}/${destDirName}/${srcDir}" \
     "${filenameStructure}" \
     "${keepStructure}" \
   )
